@@ -61,8 +61,10 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("### Parámetros Arquitectónicos")
     st.markdown("- **Motor de Inferencia:** `gemini-3.1-flash-lite`")
+    st.markdown("- **Embeddings:** `models/gemini-embedding-001`")
+    st.markdown("- **Colección:** `corpus_normativo_v3`")
     st.markdown("- **Temperatura LLM:** `0.2` (Alta fidelidad)")
-    st.markdown("- **Búsqueda Vectorial:** `top_k = 4` (Similitud del coseno)")
+    st.markdown("- **Búsqueda Vectorial:** `top_k = 4`")
     st.markdown("- **Orquestador:** `LangGraph (StateGraph)`")
     
     st.markdown("---")
@@ -104,15 +106,13 @@ if prompt:
         st.markdown(prompt)
     st.session_state.messages.append(HumanMessage(content=prompt))
     
-    # Orquestar grafo de LangGraph visualizando cada paso en un st.status
+    # Orquestar grafo de LangGraph visualizando la trazabilidad en un st.status
     with st.chat_message("assistant"):
         with st.status("Orquestando grafo LangGraph y consultando base vectorial ChromaDB...", expanded=True) as status:
             t0 = time.time()
             st.write("1. **Nodo `rewrite_query`:** Reformulando anáforas y elipsis desde el historial reciente...")
-            time.sleep(0.3)
             
             st.write("2. **Nodo `retrieve`:** Consultando el índice local ChromaDB para extraer los 4 fragmentos jurídicos más relevantes...")
-            time.sleep(0.3)
             
             st.write("3. **Nodo `generate`:** Evaluando guardrails normativos, aplicando espejo lingüístico e infiriendo dictamen con `gemini-3.1-flash-lite`...")
             
@@ -120,18 +120,19 @@ if prompt:
             try:
                 estado_salida = graph_app.invoke(estado_input)
                 t_tot = time.time() - t0
-                status.update(label=f"Dictamen jurídico generado y verificado en {t_tot:.2f}s", state="complete", expanded=False)
-                
-                # Extraer respuesta final y aplicar normalización defensiva
-                respuesta_agente = estado_salida["messages"][-1].content
-                if isinstance(respuesta_agente, list):
-                    respuesta_agente = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in respuesta_agente])
-                
-                st.markdown(respuesta_agente)
-                st.session_state.messages.append(AIMessage(content=respuesta_agente))
-                
+                status.update(label=f"Trazabilidad técnica del grafo completada en {t_tot:.2f}s", state="complete", expanded=False)
             except Exception as exc:
                 t_tot = time.time() - t0
                 status.update(label="Advertencia en la consulta al motor RAG", state="error", expanded=True)
                 msg_error = f"[ADVERTENCIA] Ha ocurrido un error al procesar la consulta: {exc}\n\n*Sugerencia: Si la API de Google está temporalmente saturada, espera unos segundos e inténtalo de nuevo.*"
                 st.error(msg_error)
+                st.stop()
+        
+        # SIEMPRE FUERA Y DEBAJO DEL ST.STATUS: Renderizado principal de la respuesta
+        # De esta forma el dictamen SIEMPRE queda visible de inmediato y el acordeón cerrado solo oculta los 3 pasos técnicos
+        respuesta_agente = estado_salida["messages"][-1].content
+        if isinstance(respuesta_agente, list):
+            respuesta_agente = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in respuesta_agente])
+            
+        st.markdown(respuesta_agente)
+        st.session_state.messages.append(AIMessage(content=respuesta_agente))

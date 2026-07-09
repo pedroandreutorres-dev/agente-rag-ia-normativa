@@ -1,6 +1,15 @@
 import os
+import sys
 from typing import TypedDict, List, Dict, Any
 from dotenv import load_dotenv
+
+# Compatibilidad con servidores Linux en Streamlit Cloud (Reemplazo de sqlite3 antiguo por pysqlite3 si está disponible)
+if sys.platform.startswith("linux"):
+    try:
+        __import__("pysqlite3")
+        sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+    except ImportError:
+        pass
 
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
@@ -8,36 +17,46 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGener
 from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 
-# Cargar variables de entorno (API Keys de Google)
+# Cargar variables de entorno locales (.env) o de Streamlit Cloud (st.secrets)
 load_dotenv()
 
-# Definicion del estado para el grafo de LangGraph
+def get_api_key() -> str:
+    key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not key:
+        try:
+            import streamlit as st
+            key = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+        except Exception:
+            pass
+    if not key:
+        raise ValueError("No se ha encontrado la clave GEMINI_API_KEY ni GOOGLE_API_KEY en el entorno (.env o st.secrets).")
+    return key
+
+# Definicion del estado para el grafo de LangGraph (Idéntico a _3.ipynb)
 class GraphState(TypedDict):
     messages: List[BaseMessage]
     query_reformulada: str
     documentos_recuperados: List[Any]
 
-# 1. Conexion directa con el Indice Vectorial ChromaDB existente en disco
+# 1. Conexion con ChromaDB usando la colección exacta "corpus_normativo_v3" y modelo "models/gemini-embedding-001"
 def get_vectorstore() -> Chroma:
     persist_dir = "vector_db"
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        raise ValueError("No se ha encontrado la clave GEMINI_API_KEY o GOOGLE_API_KEY en el entorno (.env).")
+    api_key = get_api_key()
     
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/embedding-001",
+        model="models/gemini-embedding-001",
         google_api_key=api_key
     )
     vectorstore = Chroma(
-        collection_name="rag_legal_collection",
+        collection_name="corpus_normativo_v3",
         persist_directory=persist_dir,
         embedding_function=embeddings
     )
     return vectorstore
 
-# 2. Configuracion de Modelos LLM e Instanciacion del Grafo
+# 2. Configuracion exacta de Gemini 3.1 con temperatura 0.2
 def get_llm():
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    api_key = get_api_key()
     return ChatGoogleGenerativeAI(
         model="gemini-3.1-flash-lite",
         temperature=0.2,
@@ -46,7 +65,7 @@ def get_llm():
         google_api_key=api_key
     )
 
-# Prompt Maestro (Espejo Lingüístico + Desduplicación de Citas)
+# Prompt Maestro exacto al del cuaderno _3.ipynb (Con Espejo Lingüístico y Desduplicación de Citas)
 template_rag = PromptTemplate(
     input_variables=["chat_history", "context", "question"],
     template="""Eres un Consultor Legal y Tecnológico de Alto Nivel especializado en el Reglamento General de Protección de Datos (RGPD) y en la Gobernanza y Auditoría de Sistemas de Inteligencia Artificial Agéntica.
@@ -85,7 +104,7 @@ Pregunta actual del usuario:
 """
 )
 
-# Nodos de LangGraph
+# Construcción exacta de los 3 Nodos LangGraph idénticos a _3.ipynb
 def build_rag_graph(vectorstore: Chroma, llm: ChatGoogleGenerativeAI):
     
     def rewrite_query_node(state: GraphState) -> Dict[str, Any]:
