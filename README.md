@@ -1,155 +1,150 @@
-# Sistema RAG Conversacional sobre Regulación e Inteligencia Artificial Agéntica
+# Sistema RAG Conversacional sobre Privacidad e Inteligencia Artificial Agéntica
 
-**Repositorio del Proyecto Final de Máster — Inteligencia Artificial Generativa y Agentes Autónomos**  
-**Dominio de Conocimiento:** Derecho Tecnológico, Cumplimiento Normativo (RGPD) y Gobernanza de Modelos de Inteligencia Artificial Agéntica  
-**Pila Tecnológica:** Python, LangChain, LangGraph, Google Gemini API, ChromaDB y Segmentación Semántica en Markdown
+**Repositorio Oficial — Proyecto Final de Máster en Inteligencia Artificial y Ciencia de Datos**  
+**Dominio de Especialización:** Derecho Tecnológico, Cumplimiento Normativo (RGPD) y Gobernanza de Modelos de Inteligencia Artificial Agéntica  
+**Pila Tecnológica:** Python 3.10+, LangChain, LangGraph, Google Gemini API, ChromaDB y Segmentación Semántica Jerárquica sobre Markdown
 
 ---
 
-## Descripción del Dominio del Experto
+## Descripción del Dominio y Justificación del Experto
 
-El rápido despliegue de sistemas de Inteligencia Artificial Generativa y, en particular, de **agentes autónomos (IA Agéntica)** —capaces de planificar, ejecutar herramientas, tomar decisiones complejas y procesar datos personales sin supervisión humana constante— ha generado un importante desafío en materia de cumplimiento normativo y privacidad de datos.
+El rápido despliegue de sistemas de Inteligencia Artificial Generativa y, de manera específica, de los **agentes autónomos (IA Agéntica)** —sistemas capaces de razonar, planificar, invocar herramientas externas y procesar datos personales de forma continua sin intervención humana directa— ha generado un reto normativo y de cumplimiento legal sin precedentes.
 
-Este proyecto implementa un **Consultor Legal Senior y Arquitecto de Cumplimiento Normativo en Inteligencia Artificial** fundamentado en un motor RAG (*Retrieval-Augmented Generation*) conversacional y modular. El agente es capaz de auditar, responder e inferir riesgos técnico-legales combinando el razonamiento formal de modelos de lenguaje avanzados con una base de conocimiento vectorial especializada en formato Markdown (`.md`).
+Este proyecto industrializa un **Consultor Legal Senior y Arquitecto de Cumplimiento Normativo en Inteligencia Artificial**, fundamentado en un motor RAG (*Retrieval-Augmented Generation*) conversacional y modular. El agente es capaz de auditar, interpretar e inferir riesgos técnico-legales combinando la capacidad de razonamiento de modelos de lenguaje avanzados con una base de conocimiento vectorial especializada en formato Markdown (`.md`).
 
-### Corpus Normativo Integrado
-La base de conocimiento local supera con creces el requisito de volumen del proyecto (~20 páginas / 3 documentos mínimos), incorporando más de 200.000 caracteres distribuidos en tres pilares normativos e institucionales:
+### Corpus Normativo Integrado (`data/raw/`)
+La base de conocimiento supera con holgura los requisitos de volumen de evaluación (~20 páginas / 3 documentos mínimos), incorporando más de 200.000 caracteres distribuidos en tres textos legales y orientaciones institucionales:
 * `reglamentoRGPD.md`: Texto estructurado en Markdown del **Reglamento General de Protección de Datos (RGPD)** de la Unión Europea, abarcando principios de licitud, consentimiento, bases jurídicas, derechos de los interesados y régimen de sanciones.
-* `Orientaciones Ia Agéntica.md`: Guía práctica integral en español sobre **Inteligencia Artificial Agéntica y Privacidad**, que aborda los riesgos en el diseño arquitectónico de agentes (patrones como *Chain of Thought*, bucles *ReAct*, delegación inter-agente) y sus medidas de mitigación.
-* `EDPB_Opinion_2024_28.md`: Dictamen oficial en inglés (**Opinion 2024/28**) del **Comité Europeo de Protección de Datos (EDPB)** sobre el tratamiento de datos personales en el entrenamiento y despliegue de modelos de inteligencia artificial (AI Models).
+* `Orientaciones Ia Agéntica.md`: Guía técnica integral sobre **Inteligencia Artificial Agéntica y Privacidad**, que aborda los riesgos inherentes en el diseño arquitectónico de agentes autónomos (patrones *Chain of Thought*, bucles *ReAct*, delegación inter-agente) y sus medidas de mitigación requeridas.
+* `EDPB_Opinion_2024_28.md`: Dictamen oficial en inglés (**Opinion 2024/28**) del **Comité Europeo de Protección de Datos (EDPB)** relativas al tratamiento de datos personales en el desarrollo, entrenamiento y despliegue de modelos de inteligencia artificial (*AI Models*).
 
 ---
 
-## Arquitectura Técnica y Segmentación Jerárquica
+## Arquitectura del Cuaderno y Control de Identificación (`_3.ipynb`)
 
-A diferencia de los enfoques tradicionales que ingieren documentos en formato PDF mediante divisiones arbitrarias por número de caracteres, este proyecto diseña e industrializa una **tubería de datos orientada a Markdown puro (Two-Stage Semantic Chunking)**:
-
-### Segmentación en Dos Etapas (`Two-Stage Chunking`)
-1. **Etapa Estructural (`MarkdownHeaderTextSplitter`):** El procesador reconoce la jerarquía legal nativa del documento mediante cabeceras (`# Titulo_Ley`, `## Capitulo`, `### Articulo`). Corta el documento exactamente por las fronteras normativas y transfiere esas etiquetas a los metadatos vectoriales.
-2. **Etapa de Control de Tamaño (`RecursiveCharacterTextSplitter`):** Para evitar que los artículos excesivamente largos (como los preceptos sancionadores) diluyan la precisión del embedding semántico, los bloques de la Etapa 1 se subdividen a un máximo de 1.000 caracteres con 150 de solapamiento (`overlap`). La segunda etapa conserva intacta la genealogía legal (`Titulo -> Capitulo -> Articulo`) en el metadato de cada fragmento.
+El corazón del proyecto se ejecuta de forma autónoma desde el cuaderno principal situado en `notebooks/proyecto_final_agente_rag._3.ipynb`. Para garantizar una compatibilidad y trazabilidad académicas absolutas:
+* **Celda Alumno (`uuid_alumno`):** El cuaderno inicia exactamente en la primera celda con el identificador de evaluación asignado (`uuid_alumno = "ff3f09cc-529b-4011-a745-256ac2565010"`), permitiendo la verificación y auditoría automática al arrancar el kernel de Python.
+* **Control de Entorno Defensivo:** Antes de iniciar procesos de vectorización, el código comprueba activamente la disponibilidad de la variable `GEMINI_API_KEY` en el entorno, deteniendo la ejecución con un mensaje claro si no se detectan credenciales.
 
 ---
 
-## Justificación e Ingeniería del System Prompt
+## Segmentación Semántica en Dos Etapas (`Two-Stage Chunking`)
 
-El comportamiento del agente está gobernado por el System Prompt Maestro (`template_rag`), diseñado específicamente para garantizar la rigurosidad jurídica, evitar alucinaciones y mantener una presentación profesional renderizable en Markdown.
+A diferencia de los pipelines tradicionales que trocean documentos en formato PDF mediante divisiones arbitrarias por número de caracteres (rompiendo artículos a la mitad y perdiendo el contexto legal), este proyecto diseña una tubería de datos orientada nativamente a Markdown:
 
-### Perfil y Tono del Agente
-El modelo actúa como un **Consultor Legal Senior**. Se le exige un registro formal, analítico, riguroso y estrictamente acotado al conocimiento normativo facilitado. No emite opiniones subjetivas ni suposiciones no respaldadas por la ley.
+1. **Etapa Estructural (`MarkdownHeaderTextSplitter`):** El procesador reconoce la jerarquía legal nativa del documento mediante cabeceras (`# Titulo_Ley`, `## Capitulo`, `### Articulo`). Corta el texto exactamente por las fronteras normativas y adhiere esas etiquetas a los metadatos semánticos.
+2. **Etapa de Control de Granularidad (`RecursiveCharacterTextSplitter`):** Para evitar que los artículos extensos diluyan la precisión del embedding en el espacio vectorial, los bloques de la Etapa 1 se subdividen a un máximo de 1.000 caracteres con 150 de solapamiento (`overlap`). Cada fragmento resultante conserva intacta la genealogía normacional (`Titulo -> Capitulo -> Articulo`) en su metadato de origen.
 
-### Los 5 Guardrails de Seguridad y Comportamiento Estratégico
-El prompt incorpora cinco barreras de protección de obligado cumplimiento:
-1. **Veracidad y Cero Alucinaciones:** El agente tiene terminantemente prohibido inventar o suponer normas fuera de los fragmentos recuperados en el bloque de contexto.
-2. **Memoria y Coherencia Multi-turno:** Instrucción explícita para consultar el historial reciente ante pronombres, elipsis o referencias implícitas del usuario (*"¿Y qué multas tiene eso?"*).
-3. **Guardrail de Dominio:** Si la pregunta es ajena a la tecnología, la inteligencia artificial o el derecho (ejemplo: consultas sobre cocina, deportes o entretenimiento), el agente intercepta la petición y responde estrictamente:  
+---
+
+## Justificación e Ingeniería del System Prompt (`template_rag`)
+
+El comportamiento del consultor está gobernado estrictamente por el System Prompt Maestro documentado e implementado en el código, diseñado para garantizar rigor jurídico, neutralidad analítica y renderizado progresivo en Markdown.
+
+### Perfil y Tono
+El agente opera bajo el perfil de un **Consultor Legal Senior y Arquitecto en Privacidad de IA**. Su tono es estrictamente formal, analítico, objetivo e impersonal. No emite opiniones subjetivas, especulaciones ni asume premisas no respaldadas por la ley.
+
+### Los 5 Guardrails Defensivos y Estratégicos
+El prompt implementa cinco barreras explícitas de protección y alineamiento:
+1. **Veracidad y Cero Alucinaciones:** El agente tiene prohibido inventar o inferir legislación que no figure de forma explícita en los fragmentos de contexto recuperados por el buscador.
+2. **Memoria y Coherencia Multi-turno:** Instrucción explícita para consultar el historial reciente del chat (`messages`) para resolver pronombres, elipsis o referencias implícitas (*"¿Y qué multas se aplican en ese caso?"*).
+3. **Guardrail de Dominio:** Si la consulta del usuario es ajena a la tecnología, la inteligencia artificial o el derecho (por ejemplo, preguntas sobre gastronomía, deportes o entretenimiento), el agente intercepta la petición y responde invariablemente:  
    *"No estoy entrenado para responder sobre ese tema"*.
-4. **Guardrail de Ausencia de Información:** Si la pregunta pertenece al dominio legal o tecnológico pero el precepto concreto no figura en los textos recuperados, el agente responde con honestidad técnica:  
+4. **Guardrail de Ausencia de Información:** Si la pregunta pertenece al ámbito legal o tecnológico pero el precepto consultado no figura en los textos recuperados, el agente reconoce el límite técnico con honestidad:  
    *"La información disponible en la base de conocimientos no permite responder a esta consulta"*.
-5. **Guardrail de Idioma Multilingüe y Traducción:** Detecta automáticamente el idioma de la consulta. Si el usuario pregunta en inglés sobre legislación en español, o viceversa, el agente redacta el 100% de su dictamen final en el idioma del usuario, traduciendo con exactitud jurídica los preceptos consultados.
+5. **Guardrail de Idioma Multilingüe y Traducción:** Detecta automáticamente el idioma del usuario. Si la consulta es en inglés sobre normativa en español (o viceversa), el agente redacta el 100% de su dictamen final en el idioma del usuario, traduciendo con exactitud jurídica los artículos invocados.
 
 ### Formato de Salida y Regla de Desduplicación de Citas
-Para facilitar la auditoría y su visualización en Jupyter Notebook mediante `display(Markdown(...))`, la respuesta se estructura en tres bloques diferenciados con encabezados sin numerar:
-* **Conclusión Directa:** Una frase ejecutiva clara y categórica respondiendo a la pregunta.
-* **Análisis Normativo:** Explicación técnica detallada en viñetas o párrafos breves fundamentada en los artículos leídos.
-* **Trazabilidad Jurídica (Con Desduplicación Obligatoria):** Lista de fuentes normativas con la estructura `Archivo (Título -> Capítulo -> Artículo)`. Para evitar bloques redundantes, si el buscador lee varios fragmentos de un mismo artículo legal, el prompt obliga al modelo a **agrupar la referencia en una sola entrada**, manteniendo una presentación tipográfica limpia.
+Para permitir una visualización limpia al usar `display(Markdown(...))` en Jupyter, la respuesta se articula siempre en tres bloques encabezados sin numeración artificial:
+* **Conclusión Directa:** Una frase ejecutiva resolutiva respondiendo a la consulta.
+* **Análisis Normativo:** Explicación técnica detallada en viñetas o párrafos concisos fundamentada en los artículos consultados.
+* **Trazabilidad Jurídica (Con Desduplicación Obligatoria):** Lista de fuentes normativas invocadas bajo la sintaxis `Archivo (Título -> Capítulo -> Artículo)`. Para evitar saturación visual, si el buscador vectorial recupera múltiples fragmentos de un mismo artículo legal, el prompt obliga al modelo a **agrupar y unificar la referencia en una sola viñeta legal**.
 
 ---
 
-## Orquestación Conversacional con LangGraph (`StateGraph`)
+## Orquestación Conversacional por Grafo de Nodos (`LangGraph`)
 
-El motor del agente se construye utilizando **LangGraph** mediante un grafo de estado (`GraphState`) compuesto por tres nodos secuenciales sin ciclos redundantes de autoevaluación (que elevarían innecesariamente la latencia y el consumo de cuota):
+El motor del agente se estructura con **LangGraph** (`StateGraph`) mediante tres nodos especializados conectados en un flujo estrictamente secuencial y determinista, optimizando la latencia y la resiliencia técnica:
 
-* **Nodo `rewrite_query` (Reescritura de Anáforas):** Analiza el historial conversacional (`messages`). Si el usuario realiza una pregunta que depende del contexto previo (*"¿Qué multas administrativas se aplican en ese caso?"*), el modelo LLM reformula la consulta de manera autónoma antes de consultar el índice.
-* **Nodo `retrieve` (Búsqueda Vectorial Defensiva):** Consulta la base de datos `ChromaDB` (`vector_db`) y recupera los 4 fragmentos legales con mayor similitud del coseno (`top_k=4`). Incluye manejo de excepciones ante interrupciones locales.
-* **Nodo `generate` (Razonamiento Legal y Guardrails):** Recibe el contexto recuperado, el historial del chat y la consulta del usuario, inyectando estos datos en el prompt `template_rag` para generar el dictamen utilizando el modelo **`gemini-2.5-flash-lite`** (configurado a **temperatura 0.2** para combinar naturalidad expositiva con determinismo legal).
-
----
-
-## Resiliencia en Disco y Protección de Cuota de API (`Batching + Backoff`)
-
-Uno de los principales retos prácticos al operar con modelos en la nube (Google AI Studio Free Tier) es la saturación temporal por límites de peticiones por minuto (`Error 429 Too Many Requests`). El proyecto resuelve este problema con una arquitectura defensiva:
-* **Almacenamiento Vectorial Local (`vector_db/`):** Todos los vectores indexados con `models/gemini-embedding-001` se persisten en disco bajo la colección `corpus_normativo_v3`.
-* **Indexación Condicional:** Al ejecutar el cuaderno, el script comprueba si la colección ya cuenta con vectores guardados (`vectores_existentes > 0`). Si ya existen y el parámetro `forzar_reindexacion` está en `False`, se omite el bucle de embedding, cargando el conocimiento en milisegundos sin consumir peticiones de la API.
-* **Lotes Reducidos y Pausas de Seguridad (`Backoff`):** Cuando se crea la base por primera vez, los 293 trozos se envían en lotes controlados de 15 fragmentos con pausas inter-lote de 2 segundos. Si el servidor devuelve un error de saturación temporal (429), el código intercepta la excepción, informa por consola y **aplica una pausa automática de 65 segundos** para permitir que el contador móvil de Google se reinicie a cero, completando la indexación al 100% sin cuelgues ni pérdidas de datos.
+* **Nodo `rewrite_query` (Reescritura de Anáforas):** Inspecciona el historial conversacional (`messages`). Si el turno actual depende de un intercambio anterior, invoca al LLM para reformular la consulta en una pregunta autónoma y auto-explicativa antes de consultar el índice.
+* **Nodo `retrieve` (Búsqueda Vectorial Defensiva):** Consulta el índice `ChromaDB` local y recupera los 4 fragmentos legales con mayor similitud semántica (`top_k=4`). Incluye protección contra errores locales de E/S.
+* **Nodo `generate` (Inferencia Legal y Guardrails):** Recibe el contexto recuperado, la consulta reformulada y el historial previo, inyectándolos en el prompt maestro para generar el dictamen utilizando el modelo **`gemini-2.5-flash-lite`** (configurado a **temperatura 0.2** para maximizar la fidelidad normativa sin perder fluidez expositiva).
 
 ---
 
-## Requisitos y Configuración del Entorno
+## Resiliencia en Disco y Gestión de Cuotas de API (`Batching + Backoff`)
 
-### Prerrequisitos del Sistema
-* **Python:** Versión 3.10 o superior (Verificado en Python 3.14).
-* **Clave de API de Google Gemini (`GEMINI_API_KEY`):** Es imprescindible disponer de una clave activa de Google AI Studio.
+Uno de los principales retos de ingeniería al operar con modelos en la nube (capa gratuita de Google AI Studio) es la gestión de límites de peticiones por minuto (`Error 429 Rate Limit`). El código implementa un blindaje en tres niveles:
+* **Persistencia Local en Disco (`vector_db/`):** Todos los vectores construidos con `models/gemini-embedding-001` se almacenan físicamente en el directorio `vector_db/` bajo el identificador `corpus_normativo_v3`.
+* **Indexación Condicional Inteligente:** Al ejecutar la sección de base de datos, el código verifica si el índice ya cuenta con vectores guardados (`vectores_existentes > 0`). Si existen y la bandera `forzar_reindexacion` es `False`, el bucle de embedding se omite de forma instantánea, cargando el conocimiento en milisegundos sin consumir peticiones de API.
+* **Lotes Controlados y Pausa Exponencial (`Backoff`):** Cuando la base debe regenerarse, los 293 fragmentos se indexan en bloques controlados de 15 trozos con pausas de 2 segundos inter-lote. Si el servidor de Google devuelve una saturación temporal (Error 429), el sistema intercepta la excepción e **inyecta una pausa de protección de 65 segundos**, reiniciando el contador móvil de Google y reanudando la indexación hasta completar el 100% sin cuelgues del kernel.
 
-### Instalación de Dependencias
-Abre tu terminal en el directorio raíz del repositorio e instala las librerías oficiales requeridas:
+---
 
+## Suite de Evaluación Automatizada y Chat Interactivo (`_3.ipynb`)
+
+El cuaderno final no solo define las funciones y el grafo, sino que ejecuta de manera automatizada y documentada **dos métodos de prueba e interacción**:
+
+### 1. Suite de Evaluación Automatizada (6 Pruebas de Esfuerzo)
+El código ejecuta un banco de pruebas técnicas que audita el comportamiento real del agente en todos sus frentes, renderizando cada resultado en pantalla mediante `display(Markdown(...))`:
+* **Prueba 1 (Consulta Directa RGPD):** Evaluación sobre condiciones de licitud del tratamiento de datos y rol del consentimiento.
+* **Prueba 2 (Razonamiento Multi-turno y Anáfora):** Comprobación de memoria conversacional consultando por el régimen de sanciones aplicable al caso de la Prueba 1 sin mencionar explícitamente la palabra "RGPD".
+* **Prueba 3 (IA Agéntica y Chain of Thought):** Evaluación del dominio legal en arquitecturas complejas de agentes autónomos y riesgos de privacidad.
+* **Prueba 4 (Consulta en Inglés y Traducción):** Evaluación del Dictamen EDPB solicitando un análisis técnico en inglés, verificando la respuesta en el idioma de origen y la traducción rigurosa de normas en español.
+* **Prueba 5 (Guardrail Fuera de Dominio):** Intento de desvío conversacional preguntando por la receta clásica de la paella valenciana. Verificación de rechazo del agente.
+* **Prueba 6 (Guardrail de Ausencia de Información):** Consulta sobre legislación específica de drones agrícolas en Australia. Verificación de reconocimiento de límites de su base vectorial.
+
+### 2. Modo Interactivo en Vivo (Celda de Chat Conversacional)
+Como cierre práctico del proyecto (Paso 6 del Enunciado), la última celda del cuaderno implementa un bucle `while True:` con captura de entrada de teclado (`input`). Al ejecutarla, el usuario puede dialogar libremente en tiempo real con el consultor legal RAG dentro de Jupyter, encadenando preguntas complejas con memoria conversacional y recibiendo respuestas instantáneas perfectamente estructuradas en Markdown. Para finalizar la sesión interactiva, basta con escribir las palabras clave `salir` o `terminar`.
+
+---
+
+## Requisitos e Instrucciones de Ejecución
+
+### Prerrequisitos
+* **Python:** 3.10 o superior (Verificado en entorno Python 3.14).
+* **Clave API de Google Gemini (`GEMINI_API_KEY`):** Credencial activa de Google AI Studio configurada como variable de entorno.
+
+### Instalación de Dependencias (`requirements.txt`)
+En la terminal de comandos situada en el directorio raíz del repositorio, ejecuta la instalación unificada:
 ```bash
-pip install langchain langchain-core langchain-community langchain-text-splitters
-pip install langchain-google-genai langchain-chroma chromadb langgraph
-pip install ipython pypdf python-dotenv
+pip install -r requirements.txt
 ```
 
-### Configuración de la Clave API
-Guarda tu clave secreta de Gemini creando un archivo de texto llamado `.env` en el directorio raíz del proyecto con el siguiente formato:
-
+### Configuración del Entorno (`.env`)
+Crea un archivo de texto llamado `.env` en la raíz del proyecto (este archivo está excluido por defecto por motivos de seguridad en `.gitignore`) con el siguiente contenido:
 ```env
 GEMINI_API_KEY="AIzaSyTu_Clave_Secreta_De_Google_Gemini_Aqui"
 ```
 
-*Nota de seguridad:* El archivo `.env` o la carpeta `vector_db/` (si generas tus propios vectores) se pueden excluir en `.gitignore` para no exponer credenciales en repositorios públicos.
-
----
-
-## Instrucciones Paso a Paso para la Ejecución del Cuaderno
-
-El proyecto está autocontenido dentro de la carpeta `notebooks/`. Para garantizar la máxima portabilidad, el código utiliza **rutas relativas retrocediendo un nivel (`..`)** para acceder a `data/raw/` y a `vector_db/`.
-
-1. **Iniciar el Servidor de Jupyter Notebook:**
-   Abra una terminal en la carpeta raíz del repositorio y ejecute:
+### Ejecución Paso a Paso del Cuaderno
+1. Abre tu terminal en la raíz del repositorio e inicia el servidor de cuadernos:
    ```bash
    jupyter notebook
    ```
-2. **Abrir el Cuaderno Final:**
-   En la interfaz web de Jupyter, navegue a la subcarpeta `notebooks/` y abra el archivo:
+2. Navega al directorio `notebooks/` y abre el archivo:
    `proyecto_final_agente_rag._3.ipynb`
-3. **Ejecución Secuencial de las Celdas:**
-   Ejecute las celdas en orden desde la parte superior:
-   * **Sección 1 y 2 (Entorno y API Key):** Comprueba la disponibilidad de las librerías y verifica silenciosamente que `GEMINI_API_KEY` esté cargada en memoria.
-   * **Sección 3 (Ingesta Normativa):** Carga los 3 archivos Markdown desde `../data/raw/` e imprime una tabla de verificación de lectura y pesos en KB.
-   * **Sección 4 (Troceado Semántico):** Aplica la segmentación en dos etapas e imprime una muestra de los metadatos jerárquicos (`Titulo_Ley`, `Capitulo`, `Articulo`).
-   * **Sección 5 (ChromaDB Local):** Conecta con `../vector_db/chroma.sqlite3`. Si la base ya existe, informa su carga en memoria instantánea (`903 vectores`). Si no existe, inicia el bucle por lotes de 15 trozos con protección contra errores 429.
-   * **Sección 6 (LangGraph):** Orquesta y compila el grafo conversacional en memoria.
-   * **Sección 7 (Suite de Evaluación Automatizada):** Ejecuta una auditoría con **6 casos de prueba técnicos renderizados en Markdown**:
-     1. Consulta directa sobre bases jurídicas en el RGPD.
-     2. Prueba de memoria multi-turno con anáfora (*"¿Y qué multas administrativas se pueden imponer...?"*).
-     3. Análisis técnico de riesgos en Inteligencia Artificial Agéntica (*Chain of Thought*).
-     4. Consulta multilingüe en inglés sobre el Dictamen del EDPB (demostrando la traducción automática de conceptos y respuesta 100% en inglés).
-     5. Activación del Guardrail fuera de dominio (rechazando una consulta gastronómica sobre la paella valenciana).
-     6. Activación del Guardrail de ausencia de información (reconociendo el límite normativo al consultar sobre legislación de drones agrícolas en Australia).
-   * **Sección 8 (Modo Interactivo en Vivo - Paso 6 del Enunciado):**  
-     Ejecuta la última celda del cuaderno para activar el chat en directo. Se abrirá una caja de texto (`input`) directamente en Jupyter donde podrás dialogar libremente con el Consultor Legal RAG, haciendo preguntas de seguimiento con memoria conversacional y viendo respuestas instantáneas renderizadas en formato Markdown jerárquico. Para salir de la sesión interactiva, escribe `salir` o `terminar`.
+3. Ejecuta las celdas en orden secuencial (`Shift + Enter`). El código cargará los datos desde `../data/raw/`, detectará la base local en `../vector_db/`, compilará el grafo LangGraph, ejecutará el reporte completo de las 6 pruebas de evaluación y abrirá el chat interactivo en la celda final.
 
 ---
 
-## Estructura de Carpetas del Repositorio
+## Estructura Limpia del Repositorio Público
 
 ```text
 ├── data/
 │   └── raw/
-│       ├── EDPB_Opinion_2024_28.md        # Dictamen EDPB sobre IA (Ingles)
-│       ├── Orientaciones Ia Agéntica.md     # Guia Tecnica sobre Agentes e IA (Espanol)
-│       └── reglamentoRGPD.md              # Texto estructurado del RGPD (Espanol)
+│       ├── EDPB_Opinion_2024_28.md          # Dictamen EDPB sobre IA (Inglés)
+│       ├── Orientaciones Ia Agéntica.md     # Guía Técnica de IA Agéntica y Privacidad (Español)
+│       └── reglamentoRGPD.md              # Texto normativo estructurado del RGPD (Español)
 ├── notebooks/
-│   └── proyecto_final_agente_rag._3.ipynb   # Cuaderno Jupyter Principal (Evaluacion + Chat)
+│   └── proyecto_final_agente_rag._3.ipynb   # Cuaderno Jupyter de Evaluación (Con celda uuid_alumno y chat en vivo)
 ├── vector_db/
-│   └── chroma.sqlite3                     # Base de datos vectorial persistida en disco
-├── .env                                   # Variable local con GEMINI_API_KEY (No incluir en git)
-├── build_notebook_v3.py                   # Script de ingenieria que genera el cuaderno _3.ipynb
-├── modificaciones.md                      # Registro de arquitectura, tono y control de calidad
-├── proyecto_v3.md                         # Memoria tecnica original de practicas
-└── README.md                              # Este documento oficial de documentacion del repositorio
+│   └── chroma.sqlite3                     # Base vectorial con los 903 fragmentos semánticos pre-indexados
+├── .gitignore                             # Bloqueo de seguridad para .env, .venv, y carpeta local docs/
+├── README.md                              # Documentación oficial del repositorio (Dominio, arquitectura y uso)
+└── requirements.txt                       # Dependencias oficiales para la ejecución y evaluación
 ```
 
 ---
 
-**Licencia y Contacto:** Proyecto desarrollado con fines académicos e institucionales en el marco del Máster en Inteligencia Artificial y Ciencia de Datos. Todos los derechos reservados al autor.
+**Licencia y Créditos:** Proyecto desarrollado e industrializado para la evaluación final de Inteligencia Artificial Generativa y Agentes RAG dentro del Máster de Formación Permanente en Inteligencia Artificial y Ciencia de Datos. Todos los derechos reservados.
