@@ -1,0 +1,40 @@
+# Entornos virtuales locales y variables confidenciales
+.env
+.env.local
+.venv/
+venv/
+env/
+ENV/
+
+# Secretos locales de Streamlit (Evitar exponer en GitHub)
+.streamlit/secrets.toml
+
+# Caches de Python y archivos compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Caches y checkpoints de Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Archivos de configuracion locales de IDEs
+.vscode/
+.idea/
+
+# Archivos temporales y de bloqueo de SQLite / ChromaDB
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Nota sobre la carpeta vector_db/:
+# Por defecto se mantiene NO bloqueada para permitir que al subir a GitHub y desplegar
+# en Streamlit Cloud, el servidor lea directamente la base pre-indexada (903 vectores)
+# y responda al instante sin gastar cuota de peticiones a la API al arrancar.
+# Si en tu caso prefieres que cada entorno regenere sus propios vectores desde cero,
+# puedes descomentar la siguiente linea:
+# vector_db/
+
+# archivo con documentos propios
+docs/

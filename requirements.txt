@@ -1,0 +1,22 @@
+# Dependencias oficiales del Proyecto Final RAG (LangGraph + Gemini + ChromaDB + Streamlit)
+# Instalacion mediante: pip install -r requirements.txt
+
+# Entorno e Interfaz Web / Notebook
+streamlit>=1.38.0
+ipython>=8.18.0
+python-dotenv>=1.0.0
+pypdf>=4.0.0
+
+# Ecosistema LangChain Core & Community
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+
+# Integraciones de Modelos LLM, Embeddings y Base Vectorial
+langchain-google-genai>=2.0.0
+langchain-chroma>=0.1.4
+chromadb>=0.5.0
+
+# Orquestacion de Agentes y Memoria Conversacional por Nodos
+langgraph>=0.2.0
