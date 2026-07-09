@@ -52,7 +52,7 @@ El prompt implementa cinco barreras explícitas de protección y alineamiento:
    *"No estoy entrenado para responder sobre ese tema"*.
 4. **Guardrail de Ausencia de Información:** Si la pregunta pertenece al ámbito legal o tecnológico pero el precepto consultado no figura en los textos recuperados, el agente reconoce el límite técnico con honestidad:  
    *"La información disponible en la base de conocimientos no permite responder a esta consulta"*.
-5. **Guardrail de Idioma Multilingüe y Traducción:** Detecta automáticamente el idioma del usuario. Si la consulta es en inglés sobre normativa en español (o viceversa), el agente redacta el 100% de su dictamen final en el idioma del usuario, traduciendo con exactitud jurídica los artículos invocados.
+5. **Guardrail de Idioma (Espejo Lingüístico Obligatorio):** Detecta automáticamente el idioma en que está escrita la pregunta actual y redacta el dictamen siempre en ese exacto mismo idioma. Si la consulta es en español, responde el 100% en español; si es en inglés, redacta el 100% en inglés traduciendo los artículos jurídicos recuperados.
 
 ### Formato de Salida y Regla de Desduplicación de Citas
 Para permitir una visualización limpia al usar `display(Markdown(...))` en Jupyter, la respuesta se articula siempre en tres bloques encabezados sin numeración artificial:
@@ -67,8 +67,8 @@ Para permitir una visualización limpia al usar `display(Markdown(...))` en Jupy
 El motor del agente se estructura con **LangGraph** (`StateGraph`) mediante tres nodos especializados conectados en un flujo estrictamente secuencial y determinista, optimizando la latencia y la resiliencia técnica:
 
 * **Nodo `rewrite_query` (Reescritura de Anáforas):** Inspecciona el historial conversacional (`messages`). Si el turno actual depende de un intercambio anterior, invoca al LLM para reformular la consulta en una pregunta autónoma y auto-explicativa antes de consultar el índice.
-* **Nodo `retrieve` (Búsqueda Vectorial Defensiva):** Consulta el índice `ChromaDB` local y recupera los 4 fragmentos legales con mayor similitud semántica (`top_k=4`). Incluye protección contra errores locales de E/S.
-* **Nodo `generate` (Inferencia Legal y Guardrails):** Recibe el contexto recuperado, la consulta reformulada y el historial previo, inyectándolos en el prompt maestro para generar el dictamen utilizando el modelo **`gemini-2.5-flash-lite`** (configurado a **temperatura 0.2** para maximizar la fidelidad normativa sin perder fluidez expositiva).
+* **Nodo `retrieve` (Búsqueda Vectorial Defensiva):** Consulta el índice `ChromaDB` local y recupera los 4 fragmentos legales con mayor similitud semántica (`top_k=4`). Incluye una interceptación genérica de excepciones para blindar la ejecución académica del grafo; en un paso a producción se segmentarían errores de API de red frente a fallos de I/O en disco local.
+* **Nodo `generate` (Inferencia Legal con Ventana Deslizante):** Recibe el contexto recuperado, la consulta reformulada e inyecta el historial conversacional empleando una **Ventana Deslizante de Memoria (`Sliding Window`)** que retiene únicamente los últimos 4 turnos (2 intercambios). Esto previene la saturación de tokens e impide que idiomas o temas del historial remoto interfieran en el turno actual, generando el dictamen final utilizando el modelo **`gemini-3.1-flash-lite`** a **temperatura 0.2**.
 
 ---
 
