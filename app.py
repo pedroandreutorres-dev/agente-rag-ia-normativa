@@ -6,7 +6,7 @@ from src.rag_engine import get_vectorstore, get_llm, build_rag_graph
 
 # 1. Configuracion de pagina en Streamlit
 st.set_page_config(
-    page_title="Sistema RAG Conversacional - RGPD / IA Agéntica",
+    page_title="Consultor RAG - Protección de Datos e IA Agéntica",
     page_icon="⚖️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -84,8 +84,8 @@ with st.sidebar:
         st.rerun()
 
 # 4. Cabecera Principal
-st.markdown('<div class="main-header">Sistema RAG Conversacional sobre Regulación e Inteligencia Artificial Agéntica</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Asistente jurídico y técnico orquestado con LangGraph V4 (Enrutador, MMR y Checkpointer), consultando en tiempo real el RGPD y los dictámenes oficiales del EDPB.</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">Sistema RAG Especializado en Protección de Datos (RGPD / EDPB) e Inteligencia Artificial Agéntica</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Asistente jurídico y técnico de alta fidelidad orquestado con LangGraph V4, consultando en tiempo real el Reglamento General de Protección de Datos (RGPD), el Dictamen 28/2024 del EDPB y las Orientaciones de IA Agéntica.</div>', unsafe_allow_html=True)
 
 if err_init:
     st.stop()
