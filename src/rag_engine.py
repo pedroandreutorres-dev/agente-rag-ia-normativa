@@ -16,6 +16,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
 
 # Cargar variables de entorno locales (.env) o de Streamlit Cloud (st.secrets)
 load_dotenv()
@@ -32,11 +33,12 @@ def get_api_key() -> str:
         raise ValueError("No se ha encontrado la clave GEMINI_API_KEY ni GOOGLE_API_KEY en el entorno (.env o st.secrets).")
     return key
 
-# Definicion del estado para el grafo de LangGraph (Idéntico a _3.ipynb)
-class GraphState(TypedDict):
+# Definicion del estado para el grafo de LangGraph V4
+class GraphState(TypedDict, total=False):
     messages: List[BaseMessage]
     query_reformulada: str
     documentos_recuperados: List[Any]
+    intencion: str
 
 # 1. Conexion con ChromaDB usando la colección exacta "corpus_normativo_v3" y modelo "models/gemini-embedding-001"
 def get_vectorstore() -> Chroma:
@@ -65,33 +67,43 @@ def get_llm():
         google_api_key=api_key
     )
 
-# Prompt Maestro exacto al del cuaderno _3.ipynb (Con Espejo Lingüístico y Desduplicación de Citas)
+# Prompt Maestro V4 con Guardrails (Espejo Lingüístico bifucado, Desduplicación y Síntesis Elástica)
 template_rag = PromptTemplate(
     input_variables=["chat_history", "context", "question"],
     template="""Eres un Consultor Legal y Tecnológico de Alto Nivel especializado en el Reglamento General de Protección de Datos (RGPD) y en la Gobernanza y Auditoría de Sistemas de Inteligencia Artificial Agéntica.
 Tu lenguaje debe ser formal, preciso, analítico, riguroso y estrictamente acotado al conocimiento normativo facilitado.
 
 [REGLAS DE COMPORTAMIENTO ESTRATEGICO Y GUARDRAILS]
-1. Responde UNICAMENTE utilizando la información técnica y normativa presente en los fragmentos de [CONTEXTO DE OPERACION RECUPERADO]. No inventes ni supongas nada fuera de estos textos.
+1. Responde UNICAMENTE utilizando la información técnica y normativa presente en los fragmentos de [CONTEXTO DE OPERACION RECUPERADO]. Si la pregunta del usuario es de carácter general sobre el dominio (RGPD o Inteligencia Artificial), sintetiza e integra de forma estructurada los conceptos aplicables presentes en el contexto recuperado, aclarando explícitamente qué aspectos normativos aporta la base de conocimientos. No inventes ni supongas nada fuera de estos textos.
 2. Si el usuario hace referencia a una pregunta o respuesta anterior, consulta el [HISTORIAL DE CONVERSACION RECIENTE] para mantener coherencia absoluta.
 3. GUARDRAIL DE DOMINIO: Si la pregunta del usuario NO está relacionada en absoluto con el ámbito legal, tecnológico, inteligencia artificial o protección de datos (ej. recetas de cocina, deportes, literatura general), debes responder exactamente: "No estoy entrenado para responder sobre ese tema".
-4. GUARDRAIL DE AUSENCIA DE INFORMACION: Si la pregunta está dentro del dominio jurídico/tecnológico, pero la respuesta no se encuentra en los fragmentos recuperados, tu única respuesta debe ser: "La información disponible en la base de conocimientos no permite responder a esta consulta".
+4. GUARDRAIL DE AUSENCIA DE INFORMACION: Si la pregunta pertenece al ámbito legal o tecnológico, pero el precepto o tema consultado es ajeno al corpus o no figura en absoluto en los fragmentos recuperados (por ejemplo, legislación de otros países o normativas no indexadas), tu única respuesta debe ser: "La información disponible en la base de conocimientos no permite responder a esta consulta".
 5. GUARDRAIL DE IDIOMA (ESPEJO LINGÜÍSTICO OBLIGATORIO): Detecta el idioma en que está escrita la "Pregunta actual del usuario" y redacta tu dictamen SIEMPRE en ese exacto mismo idioma:
    - Si la "Pregunta actual del usuario" está en ESPAÑOL, el 100% de tu respuesta (Conclusión Directa, Análisis Normativo y Trazabilidad Jurídica) DEBE estar estrictamente en ESPAÑOL. Queda terminantemente prohibido usar inglés.
    - Si la "Pregunta actual del usuario" está en INGLÉS, el 100% de tu dictamen DEBE redactarse estrictamente en INGLÉS, traduciendo al inglés cualquier concepto legal de los textos en español.
 
-[FORMATO DE SALIDA OBLIGATORIO]
-Estructura tu respuesta estrictamente utilizando encabezados Markdown reales SIN NUMERAR y los siguientes tres bloques diferenciados:
+[FORMATO DE SALIDA OBLIGATORIO Y ESPEJO LINGÜÍSTICO]
+Detecta el idioma en que está escrita la "Pregunta actual del usuario". El 100% de tu texto, incluyendo estrictamente los encabezados y el contenido de cada sección, DEBE estar exactamente en el mismo idioma de la pregunta:
 
-### Conclusión Directa
-Una única frase corta, profesional y categórica respondiendo de forma clara e inequívoca a la consulta planteada.
+- SI LA PREGUNTA ESTÁ EN ESPAÑOL:
+  Estructura tu respuesta utilizando estos tres encabezados exactos e inalterados SIN NUMERAR y redacta el contenido en español:
+  ### Conclusión Directa
+  Una única frase corta, profesional y categórica respondiendo de forma clara e inequívoca a la consulta planteada.
+  ### Análisis Normativo
+  Explicación técnica detallada y fundamentada en viñetas ordenadas o párrafos breves, basada exclusivamente en los preceptos y considerandos de los fragmentos recuperados.
+  ### Trazabilidad Jurídica
+  Indica al final de tu respuesta las fuentes exactas de donde extrajiste cada afirmación. REGLA DE DESDUPLICACION OBLIGATORIA: Si varios fragmentos utilizados pertenecen exactamente a la misma ley, capítulo y artículo o sección, agrupa las referencias y escribe esa cabecera UNA SOLA VEZ en la lista final. Está estrictamente prohibido repetir citas legales idénticas. Utiliza viñetas tipográficas limpias con el formato:
+  * **<Nombre_Archivo> (<Titulo_Ley> -> <Capitulo> -> <Articulo>)** — Breve mención al precepto.
 
-### Análisis Normativo
-Explicación técnica detallada y fundamentada en viñetas ordenadas o párrafos breves, basada exclusivamente en los preceptos y considerandos de los fragmentos recuperados.
-
-### Trazabilidad Jurídica
-Indica al final de tu respuesta las fuentes exactas de donde extrajiste cada afirmación. REGLA DE DESDUPLICACION OBLIGATORIA: Si varios fragmentos utilizados pertenecen exactamente a la misma ley, capítulo y artículo o sección, agrupa las referencias y escribe esa cabecera UNA SOLA VEZ en la lista final. Está estrictamente prohibido repetir citas legales idénticas. Utiliza viñetas tipográficas limpias con el formato:
-* **<Nombre_Archivo> (<Titulo_Ley> -> <Capitulo> -> <Articulo>)** — Breve mención al precepto.
+- SI LA PREGUNTA ESTÁ EN INGLÉS:
+  Estructura tu respuesta utilizando estrictamente estos tres encabezados exactos en inglés SIN NUMERAR y TRADUCE COMPLETAMENTE AL INGLÉS todo el dictamen (Conclusión, Análisis Normativo y justificación de las fuentes):
+  ### Direct Conclusion
+  A single short, professional, and definitive sentence clearly and unequivocally answering the query.
+  ### Normative Analysis
+  Detailed technical explanation in ordered bullet points or short paragraphs, based exclusively on the provisions and recitals of the retrieved fragments. You must translate all Spanish legal concepts to precise English terminology.
+  ### Legal Traceability
+  List at the end the exact sources from which each statement was extracted. MANDATORY DEDUPLICATION RULE: If multiple fragments belong to the exact same law, chapter, and article or section, group the references and write that header ONLY ONCE in the final list. Use clean typographic bullets with the format:
+  * **<File_Name> (<Law_Title> -> <Chapter> -> <Article>)** — Brief mention of the legal provision translated to English.
 
 [HISTORIAL DE CONVERSACION RECIENTE]
 {chat_history}
@@ -104,9 +116,50 @@ Pregunta actual del usuario:
 """
 )
 
-# Construcción exacta de los 3 Nodos LangGraph idénticos a _3.ipynb
+# Construcción de la Arquitectura V4 (Router + MMR + MemorySaver)
 def build_rag_graph(vectorstore: Chroma, llm: ChatGoogleGenerativeAI):
     
+    # 1. Nodo Enrutador de Intencion
+    def router_node(state: GraphState) -> Dict[str, Any]:
+        messages = state["messages"]
+        ultima_pregunta = messages[-1].content if messages else ""
+        prompt_router = f"""Analiza la pregunta del usuario y clasificala exactamente en UNA de las tres opciones siguientes (devuelve UNICAMENTE la palabra clave):
+- LEGAL_RAG: Si la consulta versa sobre derecho, normativa, RGPD, articulos, multas, DPO, auditoria de inteligencia artificial, modelos de IA o privacidad europea.
+- GENERAL_LLM: Si es un saludo conversacional (ej. 'Hola', 'Buenos dias', 'Que tal') o una pregunta abstracta/informatica de cortesía sin relacion especifica con legislacion europea ni documentos legales concretos.
+- OUT_OF_DOMAIN: Si la consulta trata sobre deportes, futbol, recetas de cocina, entretenimiento, o temas ajenos a tecnologia, IA y derecho.
+
+Pregunta: "{ultima_pregunta}"
+Clasificacion:"""
+        resp = llm.invoke([HumanMessage(content=prompt_router)])
+        cat_raw = resp.content
+        if isinstance(cat_raw, list):
+            cat_raw = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in cat_raw])
+        cat = str(cat_raw).strip()
+        if "OUT_OF_DOMAIN" in cat:
+            return {"intencion": "OUT_OF_DOMAIN"}
+        elif "GENERAL_LLM" in cat:
+            return {"intencion": "GENERAL_LLM"}
+        else:
+            return {"intencion": "LEGAL_RAG"}
+
+    # 2. Nodos de respuesta directa (Saludos y Fuera de Dominio)
+    def direct_llm_node(state: GraphState) -> Dict[str, Any]:
+        messages = state["messages"]
+        ultima_pregunta = messages[-1].content if messages else ""
+        prompt_direct = f"""Eres un Consultor Legal y Tecnológico de Alto Nivel. El usuario te ha dirigido un saludo o consulta conversacional: "{ultima_pregunta}".
+Responde de forma profesional, educada y breve en el exacto mismo idioma que el usuario, indicando tu especialidad y disposición para auditar normativas de IA y RGPD."""
+        resp = llm.invoke([HumanMessage(content=prompt_direct)])
+        contenido = resp.content
+        if isinstance(contenido, list):
+            contenido = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in contenido])
+        contenido = str(contenido).strip()
+        return {"messages": messages + [AIMessage(content=contenido)]}
+
+    def out_of_domain_node(state: GraphState) -> Dict[str, Any]:
+        messages = state["messages"]
+        return {"messages": messages + [AIMessage(content="No estoy entrenado para responder sobre ese tema")]}
+
+    # 3. Nodo Reformulador de Anáforas
     def rewrite_query_node(state: GraphState) -> Dict[str, Any]:
         messages = state["messages"]
         ultima_pregunta = messages[-1].content if messages else ""
@@ -125,18 +178,23 @@ Tu tarea tecnica es reformular la pregunta actual para que sea independiente y a
         contenido_req = respuesta.content
         if isinstance(contenido_req, list):
             contenido_req = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in contenido_req])
-        return {"query_reformulada": contenido_req.strip()}
+        return {"query_reformulada": str(contenido_req).strip()}
 
+    # 4. Nodo de Recuperación Híbrida MMR en Dos Etapas
     def retrieve_node(state: GraphState) -> Dict[str, Any]:
         query = state.get("query_reformulada") or state["messages"][-1].content
         try:
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+            retriever = vectorstore.as_retriever(
+                search_type="mmr",
+                search_kwargs={"k": 4, "fetch_k": 20, "lambda_mult": 0.7}
+            )
             docs = retriever.invoke(query)
             return {"documentos_recuperados": docs}
         except Exception as e:
-            print(f"[ADVERTENCIA] Error en la consulta de busqueda vectorial: {e}")
+            print(f"[ADVERTENCIA] Error en la consulta vectorial MMR: {e}")
             return {"documentos_recuperados": []}
 
+    # 5. Nodo de Generación Legal RAG
     def generate_node(state: GraphState) -> Dict[str, Any]:
         messages = state["messages"]
         docs = state.get("documentos_recuperados", [])
@@ -176,16 +234,32 @@ Tu tarea tecnica es reformular la pregunta actual para que sea independiente y a
         contenido = respuesta.content
         if isinstance(contenido, list):
             contenido = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in contenido])
+        contenido = str(contenido).strip()
         return {"messages": messages + [AIMessage(content=contenido)]}
 
+    # Ensamblaje del Grafo V4 (Router + MMR + MemorySaver)
     workflow = StateGraph(GraphState)
+    workflow.add_node("router", router_node)
     workflow.add_node("rewrite_query", rewrite_query_node)
     workflow.add_node("retrieve", retrieve_node)
     workflow.add_node("generate", generate_node)
+    workflow.add_node("direct_llm", direct_llm_node)
+    workflow.add_node("out_of_domain", out_of_domain_node)
 
-    workflow.add_edge(START, "rewrite_query")
+    def route_decision(state: GraphState) -> str:
+        return state.get("intencion", "LEGAL_RAG")
+
+    workflow.add_edge(START, "router")
+    workflow.add_conditional_edges("router", route_decision, {
+        "LEGAL_RAG": "rewrite_query",
+        "GENERAL_LLM": "direct_llm",
+        "OUT_OF_DOMAIN": "out_of_domain"
+    })
     workflow.add_edge("rewrite_query", "retrieve")
     workflow.add_edge("retrieve", "generate")
     workflow.add_edge("generate", END)
+    workflow.add_edge("direct_llm", END)
+    workflow.add_edge("out_of_domain", END)
 
-    return workflow.compile()
+    checkpointer = MemorySaver()
+    return workflow.compile(checkpointer=checkpointer)

@@ -1,4 +1,5 @@
 import time
+import uuid
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from src.rag_engine import get_vectorstore, get_llm, build_rag_graph
@@ -36,7 +37,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. Inicializacion en Cache del Motor RAG
-@st.cache_resource(show_spinner="Conectando con base vectorial local e instanciando motor RAG LangGraph...")
+@st.cache_resource(show_spinner="Conectando con base vectorial local e instanciando motor RAG LangGraph V4...")
 def init_system():
     try:
         vectorstore = get_vectorstore()
@@ -55,7 +56,7 @@ with st.sidebar:
     if err_init:
         st.error(f"Error al inicializar el índice: {err_init}")
     else:
-        st.success("Conectado y listo en memoria")
+        st.success("Conectado y listo en memoria (V4)")
         st.metric(label="Fragmentos Indexados (ChromaDB)", value=f"{num_fragmentos} trozos")
         
     st.markdown("---")
@@ -64,32 +65,36 @@ with st.sidebar:
     st.markdown("- **Embeddings:** `models/gemini-embedding-001`")
     st.markdown("- **Colección:** `corpus_normativo_v3`")
     st.markdown("- **Temperatura LLM:** `0.2` (Alta fidelidad)")
-    st.markdown("- **Búsqueda Vectorial:** `top_k = 4`")
-    st.markdown("- **Orquestador:** `LangGraph (StateGraph)`")
+    st.markdown("- **Búsqueda Vectorial:** `Híbrida MMR (top_k = 4, fetch_k = 20)`")
+    st.markdown("- **Orquestador:** `LangGraph V4 (StateGraph + Router)`")
+    st.markdown("- **Checkpointer:** `MemorySaver (Aislamiento por hilo)`")
     
     st.markdown("---")
     st.markdown("### Guardrails de Seguridad Activos")
-    st.markdown("1. **Dominio Normativo:** Rechazo exterior al ámbito legal/tecnológico.")
+    st.markdown("1. **Dominio Normativo:** Enrutamiento y rechazo exterior (`OUT_OF_DOMAIN`).")
     st.markdown("2. **Ausencia de Información:** Rechazo ante lagunas en el corpus local.")
     st.markdown("3. **Espejo Lingüístico:** Respuesta estricta en el idioma de la consulta.")
     st.markdown("4. **Desduplicación de Citas:** Agrupación legal por artículo y sección.")
-    st.markdown("5. **Memoria Deslizante:** Ventana de retención de últimos 4 turnos.")
+    st.markdown("5. **Memoria Aislada:** Persistencia conversacional segura en MemorySaver.")
     
     st.markdown("---")
     if st.button("Reiniciar Historial de Chat", type="primary", use_container_width=True):
         st.session_state.messages = []
+        st.session_state.thread_id = str(uuid.uuid4())
         st.rerun()
 
 # 4. Cabecera Principal
 st.markdown('<div class="main-header">Sistema RAG Conversacional sobre Regulación e Inteligencia Artificial Agéntica</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Asistente jurídico y técnico orquestado con LangGraph, consultando en tiempo real el RGPD y los dictámenes oficiales del EDPB.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Asistente jurídico y técnico orquestado con LangGraph V4 (Enrutador, MMR y Checkpointer), consultando en tiempo real el RGPD y los dictámenes oficiales del EDPB.</div>', unsafe_allow_html=True)
 
 if err_init:
     st.stop()
 
-# 5. Gestión del Historial en Session State
+# 5. Gestión del Historial y Hilo Persistente en Session State
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
 
 # Renderizar mensajes guardados en el historial
 for msg in st.session_state.messages:
@@ -108,19 +113,20 @@ if prompt:
     
     # Orquestar grafo de LangGraph visualizando la trazabilidad en un st.status
     with st.chat_message("assistant"):
-        with st.status("Orquestando grafo LangGraph y consultando base vectorial ChromaDB...", expanded=True) as status:
+        with st.status("Orquestando grafo LangGraph V4 y consultando base vectorial ChromaDB...", expanded=True) as status:
             t0 = time.time()
-            st.write("1. **Nodo `rewrite_query`:** Reformulando anáforas y elipsis desde el historial reciente...")
-            
-            st.write("2. **Nodo `retrieve`:** Consultando el índice local ChromaDB para extraer los 4 fragmentos jurídicos más relevantes...")
-            
-            st.write("3. **Nodo `generate`:** Evaluando guardrails normativos, aplicando espejo lingüístico e infiriendo dictamen con `gemini-3.1-flash-lite`...")
+            st.write("1. **Nodo `router`:** Clasificando intención en tiempo real (`LEGAL_RAG`, `GENERAL_LLM`, `OUT_OF_DOMAIN`)...")
+            st.write("2. **Nodos Condicionales (`rewrite_query` / `direct_llm` / `out_of_domain`):** Reformulando anáforas si se accede a la ruta jurídica...")
+            st.write("3. **Nodo `retrieve` (MMR):** Consultando el índice local ChromaDB para extraer los 4 fragmentos jurídicos con máxima diversidad (`lambda = 0.7`)...")
+            st.write("4. **Nodo `generate`:** Evaluando guardrails normativos, aplicando espejo lingüístico e infiriendo dictamen con `gemini-3.1-flash-lite` y `MemorySaver`...")
             
             estado_input = {"messages": st.session_state.messages}
+            config_app = {"configurable": {"thread_id": st.session_state.thread_id}}
             try:
-                estado_salida = graph_app.invoke(estado_input)
+                estado_salida = graph_app.invoke(estado_input, config=config_app)
                 t_tot = time.time() - t0
-                status.update(label=f"Trazabilidad técnica del grafo completada en {t_tot:.2f}s", state="complete", expanded=False)
+                intencion_det = estado_salida.get("intencion", "LEGAL_RAG")
+                status.update(label=f"Trazabilidad V4 completada en {t_tot:.2f}s | Intención: {intencion_det}", state="complete", expanded=False)
             except Exception as exc:
                 t_tot = time.time() - t0
                 status.update(label="Advertencia en la consulta al motor RAG", state="error", expanded=True)
@@ -129,7 +135,7 @@ if prompt:
                 st.stop()
         
         # SIEMPRE FUERA Y DEBAJO DEL ST.STATUS: Renderizado principal de la respuesta
-        # De esta forma el dictamen SIEMPRE queda visible de inmediato y el acordeón cerrado solo oculta los 3 pasos técnicos
+        # De esta forma el dictamen SIEMPRE queda visible de inmediato y el acordeón cerrado solo oculta los pasos técnicos
         respuesta_agente = estado_salida["messages"][-1].content
         if isinstance(respuesta_agente, list):
             respuesta_agente = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in respuesta_agente])
