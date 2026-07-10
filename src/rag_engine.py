@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import TypedDict, List, Dict, Any
+from typing import TypedDict, List, Dict, Any, Annotated
+from langgraph.graph.message import add_messages
 from dotenv import load_dotenv
 
 # Compatibilidad con servidores Linux en Streamlit Cloud (Reemplazo de sqlite3 antiguo por pysqlite3 si está disponible)
@@ -33,9 +34,9 @@ def get_api_key() -> str:
         raise ValueError("No se ha encontrado la clave GEMINI_API_KEY ni GOOGLE_API_KEY en el entorno (.env o st.secrets).")
     return key
 
-# Definicion del estado para el grafo de LangGraph V4
+# Definicion del estado para el grafo de LangGraph V4 (Con reductor incremental add_messages)
 class GraphState(TypedDict, total=False):
-    messages: List[BaseMessage]
+    messages: Annotated[List[BaseMessage], add_messages]
     query_reformulada: str
     documentos_recuperados: List[Any]
     intencion: str
@@ -118,6 +119,11 @@ Pregunta actual del usuario:
 
 # Construcción de la Arquitectura V4 (Router + MMR + MemorySaver)
 def build_rag_graph(vectorstore: Chroma, llm: ChatGoogleGenerativeAI):
+    llm_router = ChatGoogleGenerativeAI(
+        model="gemini-3.1-flash-lite",
+        google_api_key=get_api_key(),
+        temperature=0.0
+    )
     
     # 1. Nodo Enrutador de Intencion
     def router_node(state: GraphState) -> Dict[str, Any]:
@@ -130,7 +136,7 @@ def build_rag_graph(vectorstore: Chroma, llm: ChatGoogleGenerativeAI):
 
 Pregunta: "{ultima_pregunta}"
 Clasificacion:"""
-        resp = llm.invoke([HumanMessage(content=prompt_router)])
+        resp = llm_router.invoke([HumanMessage(content=prompt_router)])
         cat_raw = resp.content
         if isinstance(cat_raw, list):
             cat_raw = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in cat_raw])
@@ -227,9 +233,9 @@ Tu tarea tecnica es reformular la pregunta actual para que sea independiente y a
         for d in docs:
             meta = d.metadata
             src = meta.get("source", "Documento Desconocido")
-            titulo_ley = meta.get("titulo_ley", "General")
-            cap = meta.get("capitulo", "Sin Capitulo")
-            art = meta.get("articulo_o_seccion", "Sin Articulo")
+            titulo_ley = meta.get("Titulo_Ley", meta.get("titulo_ley", "General"))
+            cap = meta.get("Capitulo", meta.get("capitulo", "Sin Capitulo"))
+            art = meta.get("Articulo", meta.get("articulo_o_seccion", "Sin Articulo"))
             jerarquia = f"{titulo_ley} -> {cap} -> {art}"
             
             contexto_estratificado.append(f"--- DOCUMENTO: {src} | ESTRUCTURA: [{jerarquia}] ---\n{d.page_content}")
