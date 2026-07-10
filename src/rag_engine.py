@@ -142,12 +142,21 @@ Clasificacion:"""
         else:
             return {"intencion": "LEGAL_RAG"}
 
-    # 2. Nodos de respuesta directa (Saludos y Fuera de Dominio)
+    # 2. Nodos de respuesta directa (Saludos y Fuera de Dominio con Espejo Lingüístico Impermeable)
     def direct_llm_node(state: GraphState) -> Dict[str, Any]:
         messages = state["messages"]
         ultima_pregunta = messages[-1].content if messages else ""
-        prompt_direct = f"""Eres un Consultor Legal y Tecnológico de Alto Nivel. El usuario te ha dirigido un saludo o consulta conversacional: "{ultima_pregunta}".
-Responde de forma profesional, educada y breve en el exacto mismo idioma que el usuario, indicando tu especialidad y disposición para auditar normativas de IA y RGPD."""
+        prompt_direct = f"""[MANDATORY LANGUAGE GUARDRAIL / ESPEJO LINGÜÍSTICO OBLIGATORIO]
+Detect the exact language of the user's input: "{ultima_pregunta}".
+You MUST respond 100% in that EXACT same language without mixing languages or repeating prefixes.
+
+- SI LA PREGUNTA ESTÁ EN ESPAÑOL:
+Eres un Consultor Legal y Tecnológico de Alto Nivel. Responde en español de forma profesional, educada y breve a su mensaje o saludo, indicando tu especialidad en cumplimiento del RGPD y auditoría de Inteligencia Artificial Agéntica. No incluyas etiquetas como 'Respuesta:'.
+
+- IF THE INPUT IS IN ENGLISH:
+You are a Senior Legal and Technological Consultant. Respond strictly in English in a professional, polite, and brief manner to their message or greeting, stating your specialization in GDPR compliance and Agentic AI auditing. Do not include labels like 'Response:'.
+
+User Input: "{ultima_pregunta}"\n"""
         resp = llm.invoke([HumanMessage(content=prompt_direct)])
         contenido = resp.content
         if isinstance(contenido, list):
@@ -157,7 +166,17 @@ Responde de forma profesional, educada y breve en el exacto mismo idioma que el 
 
     def out_of_domain_node(state: GraphState) -> Dict[str, Any]:
         messages = state["messages"]
-        return {"messages": messages + [AIMessage(content="No estoy entrenado para responder sobre ese tema")]}
+        ultima_pregunta = messages[-1].content if messages else ""
+        prompt_ood = f"""Detect the exact language of this user query: "{ultima_pregunta}".
+If the query is in Spanish, output EXACTLY AND ONLY: No estoy entrenado para responder sobre ese tema.
+If the query is in English, output EXACTLY AND ONLY: I am not trained to answer questions on that topic.
+Do not output anything else."""
+        resp = llm.invoke([HumanMessage(content=prompt_ood)])
+        contenido = resp.content
+        if isinstance(contenido, list):
+            contenido = "".join([b.get("text", "") if isinstance(b, dict) else str(b) for b in contenido])
+        contenido = str(contenido).strip()
+        return {"messages": messages + [AIMessage(content=contenido)]}
 
     # 3. Nodo Reformulador de Anáforas
     def rewrite_query_node(state: GraphState) -> Dict[str, Any]:
