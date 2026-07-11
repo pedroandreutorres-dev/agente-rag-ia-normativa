@@ -34,14 +34,14 @@ def get_api_key() -> str:
         raise ValueError("No se ha encontrado la clave GEMINI_API_KEY ni GOOGLE_API_KEY en el entorno (.env o st.secrets).")
     return key
 
-# Definicion del estado para el grafo de LangGraph V4 (Con reductor incremental add_messages)
+# Definicion del estado para el grafo de LangGraph (Con reductor incremental add_messages)
 class GraphState(TypedDict, total=False):
     messages: Annotated[List[BaseMessage], add_messages]
     query_reformulada: str
     documentos_recuperados: List[Any]
     intencion: str
 
-# 1. Conexion con ChromaDB usando la colección exacta "corpus_normativo_v3" y modelo "models/gemini-embedding-001"
+# 1. Conexion con ChromaDB usando la colección normativo y modelo "models/gemini-embedding-001"
 def get_vectorstore() -> Chroma:
     persist_dir = "vector_db"
     api_key = get_api_key()
@@ -68,7 +68,7 @@ def get_llm():
         google_api_key=api_key
     )
 
-# Prompt Maestro V4 con Guardrails (Espejo Lingüístico bifucado, Desduplicación y Síntesis Elástica)
+# Prompt Maestro con Guardrails (Espejo Lingüístico bifurcado, Desduplicación y Síntesis Elástica)
 template_rag = PromptTemplate(
     input_variables=["chat_history", "context", "question"],
     template="""Eres un Consultor Legal y Tecnológico de Alto Nivel especializado en el Reglamento General de Protección de Datos (RGPD) y en la Gobernanza y Auditoría de Sistemas de Inteligencia Artificial Agéntica.
@@ -117,7 +117,7 @@ Pregunta actual del usuario:
 """
 )
 
-# Construcción de la Arquitectura V4 (Router + MMR + MemorySaver)
+# Construcción de la Arquitectura RAG (Router + MMR + MemorySaver)
 def build_rag_graph(vectorstore: Chroma, llm: ChatGoogleGenerativeAI):
     llm_router = ChatGoogleGenerativeAI(
         model="gemini-3.1-flash-lite",
@@ -262,7 +262,7 @@ Tu tarea tecnica es reformular la pregunta actual para que sea independiente y a
         contenido = str(contenido).strip()
         return {"messages": messages + [AIMessage(content=contenido)]}
 
-    # Ensamblaje del Grafo V4 (Router + MMR + MemorySaver)
+    # Ensamblaje del Grafo (Router + MMR + MemorySaver)
     workflow = StateGraph(GraphState)
     workflow.add_node("router", router_node)
     workflow.add_node("rewrite_query", rewrite_query_node)

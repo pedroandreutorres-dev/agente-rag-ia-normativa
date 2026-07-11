@@ -37,7 +37,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. Inicializacion en Cache del Motor RAG
-@st.cache_resource(show_spinner="Conectando con base vectorial local e instanciando motor RAG LangGraph V4...")
+@st.cache_resource(show_spinner="Conectando con base vectorial local e instanciando motor RAG con LangGraph...")
 def init_system():
     try:
         vectorstore = get_vectorstore()
@@ -56,17 +56,17 @@ with st.sidebar:
     if err_init:
         st.error(f"Error al inicializar el índice: {err_init}")
     else:
-        st.success("Conectado y listo en memoria (V4)")
+        st.success("Conectado y listo en memoria")
         st.metric(label="Fragmentos Indexados (ChromaDB)", value=f"{num_fragmentos} trozos")
         
     st.markdown("---")
     st.markdown("### Parámetros Arquitectónicos")
     st.markdown("- **Motor de Inferencia:** `gemini-3.1-flash-lite`")
     st.markdown("- **Embeddings:** `models/gemini-embedding-001`")
-    st.markdown("- **Colección:** `corpus_normativo_v3`")
+    st.markdown("- **Colección:** `corpus_normativo`")
     st.markdown("- **Temperatura LLM:** `0.2` (Alta fidelidad)")
     st.markdown("- **Búsqueda Vectorial:** `Híbrida MMR (top_k = 4, fetch_k = 20)`")
-    st.markdown("- **Orquestador:** `LangGraph V4 (StateGraph + Router)`")
+    st.markdown("- **Orquestador:** `LangGraph (StateGraph + Router)`")
     st.markdown("- **Checkpointer:** `MemorySaver (Aislamiento por hilo)`")
     
     st.markdown("---")
@@ -85,7 +85,7 @@ with st.sidebar:
 
 # 4. Cabecera Principal
 st.markdown('<div class="main-header">Sistema RAG Especializado en Protección de Datos (RGPD / EDPB) e Inteligencia Artificial Agéntica</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Asistente jurídico y técnico de alta fidelidad orquestado con LangGraph V4, consultando en tiempo real el Reglamento General de Protección de Datos (RGPD), el Dictamen 28/2024 del EDPB y las Orientaciones de IA Agéntica.</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Asistente jurídico y técnico de alta fidelidad orquestado con LangGraph, consultando en tiempo real el Reglamento General de Protección de Datos (RGPD), el Dictamen 28/2024 del EDPB y las Orientaciones de IA Agéntica.</div>', unsafe_allow_html=True)
 
 if err_init:
     st.stop()
@@ -113,7 +113,7 @@ if prompt:
     
     # Orquestar grafo de LangGraph visualizando la trazabilidad en un st.status
     with st.chat_message("assistant"):
-        with st.status("Orquestando grafo LangGraph V4 y consultando base vectorial ChromaDB...", expanded=True) as status:
+        with st.status("Orquestando grafo con LangGraph y consultando base vectorial ChromaDB...", expanded=True) as status:
             t0 = time.time()
             st.write("1. **Nodo `router`:** Clasificando intención en tiempo real (`LEGAL_RAG`, `GENERAL_LLM`, `OUT_OF_DOMAIN`)...")
             st.write("2. **Nodos Condicionales (`rewrite_query` / `direct_llm` / `out_of_domain`):** Reformulando anáforas si se accede a la ruta jurídica...")
@@ -126,7 +126,7 @@ if prompt:
                 estado_salida = graph_app.invoke(estado_input, config=config_app)
                 t_tot = time.time() - t0
                 intencion_det = estado_salida.get("intencion", "LEGAL_RAG")
-                status.update(label=f"Trazabilidad V4 completada en {t_tot:.2f}s | Intención: {intencion_det}", state="complete", expanded=False)
+                status.update(label=f"Trazabilidad completada en {t_tot:.2f}s | Intención: {intencion_det}", state="complete", expanded=False)
             except Exception as exc:
                 t_tot = time.time() - t0
                 status.update(label="Advertencia en la consulta al motor RAG", state="error", expanded=True)
